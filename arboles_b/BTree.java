@@ -18,7 +18,7 @@ public class BTree {
         return root == null;
     }
 
-    public InsertResult insert(int key) {
+    public InsertResult insert(String key) {
 
         if (root == null) {
             root = new Node(true);
@@ -62,11 +62,11 @@ public class BTree {
     //                          [20]
     //           [ 10 ]                    [ 30, 32 ]
     // [01, 04, 06] [11, 12, 13] [21, 22, 23] [31] [33, 40]
-    private SplitResult insertRecursive(Node node, int key, InsertState state) {
+    private SplitResult insertRecursive(Node node, String key, InsertState state) {
 
         int pos = findPosition(node, key);
 
-        if (pos < node.keys.size() && node.keys.get(pos) == key) {
+        if (pos < node.keys.size() && node.keys.get(pos).equals(key)) {
             state.inserted = false;
             return null;
         }
@@ -105,20 +105,20 @@ public class BTree {
 
     }
 
-    private int findPosition(Node node, int key) {
+    private int findPosition(Node node, String key) {
         int i = 0;
-        while (i < node.keys.size() && key > node.keys.get(i)) {
+        while (i < node.keys.size() && key.compareTo(node.keys.get(i)) > 0) {
             i++;
         }
         return i;
     }
 
     // keys = [10,20,30] ----> Insertar key = 25 -------> [10,20,25,30]
-    private void insertSorted(List<Integer> keys, int key) {
+    private void insertSorted(List<String> keys, String key) {
         // add -> No remplaza
         // set -> Si remplaza
         int i = 0;
-        while (i < keys.size() && key > keys.get(i)) {
+        while (i < keys.size() && key.compareTo(keys.get(i)) > 0) {
             i++;
         }
         keys.add(i, key);
@@ -135,7 +135,7 @@ public class BTree {
         int totalKeys = node.keys.size();
         int mid = (totalKeys - 1) / 2;
 
-        int promotedKey = node.keys.get(mid);
+        String promotedKey = node.keys.get(mid);
 
         Node left = new Node(node.isLeaf);
         Node right = new Node(node.isLeaf);

@@ -7,7 +7,7 @@ import java.util.List;
 // Clase Nodo
 // =========================================================
 public class Node {
-    List<Integer> keys; // 12
+    List<String> keys; // 12
     List<Node> children; // 11 14 16
     boolean isLeaf;
 

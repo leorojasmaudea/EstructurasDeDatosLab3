@@ -28,7 +28,7 @@ public class Main {
                     break;
 
                 case 2:
-                    int value = readInt(sc, "Ingrese la clave a insertar: ");
+                    String value = readString(sc, "Ingrese la clave a insertar: ");
                     InsertResult result = tree.insert(value);
 
                     if (!result.inserted) {
@@ -72,6 +72,11 @@ public class Main {
         System.out.println("1. Visualizar árbol");
         System.out.println("2. Insertar nuevo registro");
         System.out.println("3. Salir");
+    }
+
+    private static String readString(Scanner sc, String message) {
+        System.out.print(message);
+        return sc.nextLine().trim();
     }
 
     private static int readInt(Scanner sc, String message) {
