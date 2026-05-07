@@ -72,11 +72,11 @@ public class Main {
     private static int askOrder(Scanner sc) {
         int order;
         do {
-            order = readInt(sc, "Ingrese el orden del árbol B (mínimo 3): ");
-            if (order < 3) {
-                System.out.println("El orden debe ser mayor o igual a 3.");
+            order = readInt(sc, "Ingrese el orden del árbol B (entre 4 y 9): ");
+            if (order < 4 || order > 9) {
+                System.out.println("El orden debe estar entre 4 y 9.");
             }
-        } while (order < 3);
+        } while (order < 4 || order > 9);
         return order;
     }
 
@@ -104,7 +104,7 @@ public class Main {
             } catch (NumberFormatException e) {
                 System.out.println("Entrada inválida.");
             }
-        }
+        } 
     }
 
 }

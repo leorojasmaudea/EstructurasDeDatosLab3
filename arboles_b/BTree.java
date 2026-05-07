@@ -49,23 +49,23 @@ public class BTree {
     // Insertar -> 40
     // [ | 10 | 20 | 30 |]
     // [01, 04, 06] [11, 12, 13] [21, 22, 23] [31, 32, 33]
-    /////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
     // [ | 10 | 20 | 30 |]
     // [01, 04, 06] [11, 12, 13] [21, 22, 23] [31, 32, 33, 40] -> Overflow
-    //////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
     // [ | 10 | 20 | 30 |]
     // [01, 04, 06] [11, 12, 13] [21, 22, 23] [31, 32, 33, 40] -> Overflow (Sube 32)
-    //////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 
     // [ | 10 | 20 | 30 | 32 | ]
     // [01, 04, 06] [11, 12, 13] [21, 22, 23] [31] [33, 40]
-    ///////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     // [20]
     // [ 10 ] [ 30, 32 ]
     // [01, 04, 06] [11, 12, 13] [21, 22, 23] [31] [33, 40]
     private SplitResult insertRecursive(Node node, String key, InsertState state) {
 
-        int pos = findPosition(node, key);
+        int pos = findPosition(node.keys, key);
 
         if (pos < node.keys.size() && node.keys.get(pos).equals(key)) {
             state.inserted = false;
@@ -84,7 +84,7 @@ public class BTree {
             return null;
         }
 
-        int childIndex = findPosition(node, key);
+        int childIndex = findPosition(node.keys, key);
         SplitResult childSplit = insertRecursive(node.children.get(childIndex), key, state);
 
         if (!state.inserted)
@@ -106,11 +106,13 @@ public class BTree {
 
     }
 
-    private int findPosition(Node node, String key) {
+    private int findPosition(List<String> keys, String key) {
         int i = 0;
-        while (i < node.keys.size() && key.compareTo(node.keys.get(i)) > 0) {
-            i++;
-        }
+        // compareTo returna un valor negativo si key < node.keys.get(i), 0 si son
+        // iguales, y un valor positivo si key > node.keys.get(i).
+        for(String nodeKey : keys)
+            if (key.compareTo(nodeKey) > 0)
+                i++;                        
         return i;
     }
 
@@ -118,11 +120,7 @@ public class BTree {
     private void insertSorted(List<String> keys, String key) {
         // add -> No remplaza
         // set -> Si remplaza
-        int i = 0;
-        while (i < keys.size() && key.compareTo(keys.get(i)) > 0) {
-            i++;
-        }
-        keys.add(i, key);
+        keys.add(findPosition(keys, key), key);        
     }
 
     // [10,20,25,30] -- Lenght: 3 --- Size(): 4 -------- [10] [25,30]
@@ -193,14 +191,15 @@ public class BTree {
 
     public Node search(String key) {
         Queue<NodeLevel> queue = new LinkedList<>();
-        if (root == null) return null;
+        if (root == null)
+            return null;
         queue.add(new NodeLevel(root, 0));
 
         while (!queue.isEmpty()) {
             NodeLevel current = queue.poll();
             Node node = current.node;
 
-            int pos = findPosition(node, key);
+            int pos = findPosition(node.keys, key);
 
             if (pos < node.keys.size() && node.keys.get(pos).equals(key)) {
                 return node;
@@ -210,15 +209,16 @@ public class BTree {
                 queue.add(new NodeLevel(node.children.get(pos), current.level + 1));
             }
         }
-
         return null;
     }
 
     // Lógica general de eliminación en B-Tree:
     // 1) Si la clave está en hoja: se elimina directamente.
-    // 2) Si está en interno: se reemplaza por su predecesor y luego se elimina ese predecesor.
+    // 2) Si está en interno: se reemplaza por su predecesor y luego se elimina ese
+    // predecesor.
     // 3) Si no está en el nodo actual: se desciende al hijo correspondiente,
-    //    pero antes se garantiza que ese hijo tenga suficientes claves para evitar underflow.
+    // pero antes se garantiza que ese hijo tenga suficientes claves para evitar
+    // underflow.
     public void delete(String key) {
         if (root == null)
             return;
@@ -228,13 +228,13 @@ public class BTree {
         // Si la raíz perdió su última clave tras una fusión, el árbol reduce su altura
         // promoviendo al único hijo restante como nueva raíz.
         if (root.keys.isEmpty() && !root.isLeaf) {
-            root = root.children.get(0);
+            root = root.children.getFirst();
         }
     }
 
     private void deleteRecursive(Node node, String key) {
         // Posición donde debería estar la clave dentro del nodo actual.
-        int pos = findPosition(node, key);
+        int pos = findPosition(node.keys, key);
 
         // Si coincide en esta posición, la clave sí está en este nodo.
         if (pos < node.keys.size() && node.keys.get(pos).equals(key)) {
@@ -245,13 +245,27 @@ public class BTree {
                 System.out.println("Caso 1: Eliminación simple en hoja (" + key + ")");
             } else {
                 // CASO 3: la clave está en un nodo interno.
-                // Estrategia aplicada: reemplazar por el predecesor (máxima clave
-                // del subárbol izquierdo) para mantener el orden del B-Tree.
-                // Luego se elimina recursivamente esa clave predecesora del hijo izquierdo.
+                // Se aplica la estrategia estándar de B-Tree:
+                // - si el hijo izquierdo puede prestar, usar predecesor;
+                // - si el derecho puede prestar, usar sucesor;
+                // - si ambos están al mínimo, fusionar y continuar en el nodo fusionado.
                 System.out.println("Caso 3: Eliminación en nodo interno (" + key + ")");
-                String predecessorKey = getPredecessor(node.children.get(pos));
-                node.keys.set(pos, predecessorKey);
-                deleteRecursive(node.children.get(pos), predecessorKey);
+                int minKeys = (int) Math.ceil(order / 2.0) - 1;
+                Node leftChild = node.children.get(pos);
+                Node rightChild = node.children.get(pos + 1);
+
+                if (leftChild.keys.size() > minKeys) {
+                    String predecessorKey = getPredecessor(leftChild);
+                    node.keys.set(pos, predecessorKey);
+                    deleteRecursive(leftChild, predecessorKey);
+                } else if (rightChild.keys.size() > minKeys) {
+                    String successorKey = getSuccessor(rightChild);
+                    node.keys.set(pos, successorKey);
+                    deleteRecursive(rightChild, successorKey);
+                } else {
+                    Node merged = mergeChildren(node, pos);
+                    deleteRecursive(merged, key);
+                }
             }
         } else {
             // La clave no está en este nodo; se debe continuar la búsqueda en un hijo.
@@ -272,22 +286,42 @@ public class BTree {
 
                 // Tras préstamo o fusión, el arreglo de claves/hijos del padre puede cambiar,
                 // por eso recalculamos la posición de descenso.
-                pos = findPosition(node, key);
+                pos = findPosition(node.keys, key);
             }
 
             deleteRecursive(node.children.get(pos), key);
         }
     }
 
+    private Node mergeChildren(Node parent, int keyIdx) {
+        Node left = parent.children.get(keyIdx);
+        Node right = parent.children.get(keyIdx + 1);
+
+        left.keys.add(parent.keys.remove(keyIdx));
+        left.keys.addAll(right.keys);
+
+        if (!left.isLeaf) {
+            left.children.addAll(right.children);
+        }
+
+        parent.children.remove(keyIdx + 1);
+        return left;
+    }
+
     private void fixUnderflow(Node parent, int childIdx) {
-        // child es el hijo por el que vamos a descender y que puede quedar corto de claves.
+        // child es el hijo por el que vamos a descender y que puede quedar corto de
+        // claves.
         int minKeys = (int) Math.ceil(order / 2.0) - 1; // Mínimo de claves permitido por nodo (excepto raíz).
         Node child = parent.children.get(childIdx); // Nodo que potencialmente tiene underflow.
         Node leftSibling = (childIdx > 0) ? parent.children.get(childIdx - 1) : null; // Hermano izquierdo, si existe.
-        Node rightSibling = (childIdx < parent.children.size() - 1) ? parent.children.get(childIdx + 1) : null; // Hermano derecho, si existe.
+        Node rightSibling = (childIdx < parent.children.size() - 1) ? parent.children.get(childIdx + 1) : null; // Hermano
+                                                                                                                // derecho,
+                                                                                                                // si
+                                                                                                                // existe.
         // CASO 2a: redistribución (préstamo).
         // Se prioriza tomar del hermano izquierdo si tiene más de minKeys.
-        // La clave separadora del padre baja al hijo y una clave del hermano sube al padre.
+        // La clave separadora del padre baja al hijo y una clave del hermano sube al
+        // padre.
         if (leftSibling != null && leftSibling.keys.size() > minKeys) {
             System.out.println("Caso 2a: Préstamo del hermano izquierdo");
             child.keys.add(0, parent.keys.get(childIdx - 1));
@@ -309,7 +343,8 @@ public class BTree {
             }
         }
         // CASO 2b: fusión.
-        // Si ningún hermano puede prestar, se fusiona child con un hermano y una clave del padre.
+        // Si ningún hermano puede prestar, se fusiona child con un hermano y una clave
+        // del padre.
         // El padre pierde una clave y un puntero hijo.
         else {
             System.out.println("Caso 2b: Fusión de nodos (Underflow)");
@@ -335,9 +370,18 @@ public class BTree {
         // El predecesor es la clave más grande del subárbol:
         // bajar siempre por el hijo más a la derecha hasta llegar a hoja.
         while (!node.isLeaf)
-            node = node.children.get(node.children.size() - 1);        
+            node = node.children.get(node.children.size() - 1);
 
         // Última clave de la hoja más a la derecha.
         return node.keys.get(node.keys.size() - 1);
+    }
+
+    private String getSuccessor(Node node) {
+        // El sucesor es la clave más pequeña del subárbol:
+        // bajar siempre por el hijo más a la izquierda hasta llegar a hoja.
+        while (!node.isLeaf)
+            node = node.children.get(0);
+
+        return node.keys.get(0);
     }
 }
