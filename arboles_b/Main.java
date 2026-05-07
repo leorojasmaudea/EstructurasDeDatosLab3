@@ -44,7 +44,18 @@ public class Main {
                     String keyToDelete = readString(sc, "Ingrese la clave a eliminar: ");
                     tree.delete(keyToDelete);
                     break;
+
                 case 4:
+                    String keyToSearch = readString(sc, "Ingrese la clave a buscar: ");
+                    Node found = tree.search(keyToSearch);
+                    if (found != null) {
+                        System.out.println("Clave \"" + keyToSearch + "\" encontrada en el nodo: " + found);
+                    } else {
+                        System.out.println("Clave \"" + keyToSearch + "\" no encontrada.");
+                    }
+                    break;
+
+                case 5:
                     System.out.println("Saliendo...");
                     break;
 
@@ -53,7 +64,7 @@ public class Main {
             }
 
             System.out.println();
-        } while (option != 4);
+        } while (option != 5);
 
         sc.close();
     }
@@ -76,7 +87,8 @@ public class Main {
         System.out.println("1. Visualizar árbol");
         System.out.println("2. Insertar nuevo registro");
         System.out.println("3. Eliminar registro");
-        System.out.println("4. Salir");
+        System.out.println("4. Buscar registro");
+        System.out.println("5. Salir");
     }
 
     private static String readString(Scanner sc, String message) {

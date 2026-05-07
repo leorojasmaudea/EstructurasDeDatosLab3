@@ -35,6 +35,11 @@ arboles_b/
 - **Caso 3 – Eliminación en nodo interno:** se reemplaza la clave por su **predecesor en hoja** y luego se elimina recursivamente ese predecesor.
 - Reducción automática de la **altura del árbol** si la raíz queda vacía tras una fusión.
 
+### Búsqueda
+- Búsqueda de una clave con `search(String key)`.
+- Recorre el árbol por niveles (BFS) descendiendo por el hijo correcto en cada nodo.
+- Retorna el **nodo** donde se encontró la clave, o `null` si no existe.
+
 ### Visualización
 - Impresión del árbol **por niveles** (BFS) con `printByLevels()`.
 - Cada nodo se muestra como `[clave1 | clave2 | ...]`.
@@ -50,12 +55,14 @@ arboles_b/
 1. Visualizar árbol
 2. Insertar nuevo registro
 3. Eliminar registro
-4. Salir
+4. Buscar registro
+5. Salir
 ```
 
 - Valida entradas numéricas con manejo de excepciones.
 - Informa si una inserción fue **normal** o implicó **split/overflow**.
 - Indica qué caso de eliminación se aplicó en cada operación.
+- Muestra el nodo donde se encontró la clave buscada, o un mensaje si no existe.
 
 ---
 
